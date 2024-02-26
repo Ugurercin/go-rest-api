@@ -1,0 +1,9 @@
+PUT http://localhost:8080/events/3
+
+{
+  "name": "New Event Name",
+  "description": "New Event Description",
+  "location": "New Event Location",
+  "dateTime": "2024-01-01T15:30:00.000Z"
+}
+```
