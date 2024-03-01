@@ -6,7 +6,6 @@ import (
 	"strconv"
 
 	"example.com/rest-api/models"
-	"example.com/rest-api/utils"
 	"github.com/gin-gonic/gin"
 )
 
@@ -38,23 +37,10 @@ func getEventById(ctx *gin.Context) {
 }
 
 func createEvent(ctx *gin.Context) {
-	token := ctx.Request.Header.Get("Authorization")
-
-	if token == "" {
-		ctx.JSON(http.StatusUnauthorized, gin.H{"message": "not authorized"})
-		return
-	}
-
-	err := utils.VerifyToken(token)
-
-	if err != nil {
-		ctx.JSON(http.StatusUnauthorized, gin.H{"message": "not authorized"})
-		return
-	}
 
 	var event models.Event
 
-	err = ctx.ShouldBindJSON(&event)
+	err := ctx.ShouldBindJSON(&event)
 
 	if err != nil {
 		fmt.Println("Error binding JSON:", err)
@@ -62,7 +48,9 @@ func createEvent(ctx *gin.Context) {
 		return
 	}
 
-	event.UserId = 
+	userId := ctx.GetInt64("userId")
+
+	event.UserId = userId
 
 	err = event.Save()
 
@@ -81,13 +69,18 @@ func updateEvent(ctx *gin.Context) {
 		return
 	}
 
-	_, err = models.GetEventById(eventId)
+	userId := ctx.GetInt64("userId")
+	event, err := models.GetEventById(eventId)
 
 	if err != nil {
 		ctx.JSON(http.StatusInternalServerError, gin.H{"error": err.Error()})
 		return
 	}
 
+	if event.UserId != userId {
+		ctx.JSON(http.StatusUnauthorized, gin.H{"message": "not authorized to update event"})
+		return
+	}
 	var updatedEvent models.Event
 
 	err = ctx.ShouldBindJSON(&updatedEvent)
